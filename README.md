@@ -1,4 +1,4 @@
-# This project is based on VINS-FUSION. I've merged some methods in the field of feature extraction 、local feature matching and visual place recognition into VINS-FUSION for loop closure. The README will be updated soon!
+# This project is based on VINS-FUSION. I've merged some methods in the field of feature extraction(superpoint) 、local feature matching(lightglue) and visual place recognition(MixVPPR) into VINS-FUSION for loop closure. The README will be updated soon!
 
 # VINS-Fusion
 ## An optimization-based multi-sensor state estimator
