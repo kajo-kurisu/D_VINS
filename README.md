@@ -1,3 +1,5 @@
+# This project bases on VINS-FUSION. I merge some methods in the field of feature extraction 、local feature matching and visual place recognition into VINS-FUSION for loop-closure. The README will be update soon!
+
 # VINS-Fusion
 ## An optimization-based multi-sensor state estimator
 
