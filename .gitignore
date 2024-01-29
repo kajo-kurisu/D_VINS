@@ -18,6 +18,7 @@ camera_chessboard_data.dat
 **/config/analysis/**
 **/config/analysis.zip
 
+**.zip
 **/cmake-build-debug/**
 **/cmake-build-release/**
 **/.idea/**

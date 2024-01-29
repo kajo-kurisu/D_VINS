@@ -182,19 +182,6 @@ void MixVPR::inference(const cv::String& filename,
     checkRuntime(cudaStreamSynchronize(stream));
 
     //解算描述子
-
-//    for(int i =0;i<sizeof(output_data_host)/sizeof (float);i++)
-//    {
-//        frame.global_descriptor[i]=*(output_data_host+i);
-
-//        frame.img_global_des_vec.push_back(*(output_data_host+i));
-//        des_db.push_back(*(output_data_host+i));
-//    }
-//    cout<<"mix_des size = "<<frame.img_des_vec.size()<<endl;
-
-
-//    std::vector<float> a (output_data_host,output_data_host+1);
-
     frame.img_global_des_vec.insert(frame.img_global_des_vec.begin(),output_data_host, output_data_host + 512);
     des_db.insert(des_db.end(),output_data_host,output_data_host+512);
 
@@ -205,11 +192,9 @@ void MixVPR::inference(const cv::String& filename,
     // 等待结束事件完成
     cudaEventSynchronize(stop);
 
-
     // 计算两个event之间的间隔时间
-//    float time;
     cudaEventElapsedTime(&time, start, stop);
-    printf("time = %f\n",time);
+    printf("MIX time = %f\n",time);
 
     frame.extract_time = time;
     frame_set.push_back(frame);
@@ -480,7 +465,7 @@ namespace Estimator_net {
             return true;
         }
 
-        bool startup(const std::string &superpoint_re_engine_path,int gpuid){
+        bool startup(const std::string &superpoint_re_engine_path, int gpuid){
             gpu_ = gpuid;
             TRT::set_device(gpuid);
 
@@ -498,6 +483,46 @@ namespace Estimator_net {
             return true;
         }
 
+        bool startup(const std::string &engine_path, const int& engine_type , int gpuid){
+            gpu_ = gpuid;
+            TRT::set_device(gpuid);
+
+            switch (engine_type) {
+                case 0:
+                    superpoint_model_ = TRT::load_infer(engine_path);
+                    if(superpoint_model_ == nullptr){
+                        INFOE("Load model failed: %s", engine_path.c_str());
+                        return false;
+                    }
+                    superpoint_model_->print();
+                    stream_ = superpoint_model_->get_stream();
+
+                    return true;
+                case 1:
+                    superpoint_re_model_ = TRT::load_infer(engine_path);
+                    if(superpoint_re_model_ == nullptr){
+                        INFOE("Load model failed: %s", engine_path.c_str());
+                        return false;
+                    }
+                    superpoint_re_model_->print();
+                    stream_ = superpoint_re_model_->get_stream();
+
+                    return true;
+                case 2:
+                    lightglue_model_ = TRT::load_infer(engine_path);
+                    if(lightglue_model_ == nullptr){
+                        INFOE("Load model failed: %s", engine_path.c_str());
+                        return false;
+                    }
+                    lightglue_model_->print();
+                    stream_ = lightglue_model_->get_stream();
+                    return true;
+
+                default:
+                    INFOE("Unsupported engine_type_code: %d", engine_type);
+            }
+        }
+
         void sp_extractor(const cv::Mat &image) override {
             auto startTime = std::chrono::high_resolution_clock::now();
             auto startTime_sp = std::chrono::high_resolution_clock::now();
@@ -506,9 +531,8 @@ namespace Estimator_net {
             // 绑定输入输出
             sp_in_image = superpoint_model_->tensor("image");
 
-            //--------------------SP预处理--------------------------
+            //--------------------SP_pre 预处理--------------------------
             //imread读到的图片为BGR
-//            cv::Mat image_gray =  image.clone();
 
             height = image.rows;
             width = image.cols;
@@ -523,10 +547,10 @@ namespace Estimator_net {
             height_adj = 480;
 
             AffineMatrix affineMatrix;
-            cv::Size input_size(width_adj, 480);
+            cv::Size input_size(width_adj, height_adj);
             affineMatrix.compute(image.size(), input_size);
 
-            tensor->resize(1, 1, 480, width_adj).to_gpu();
+            tensor->resize(1, 1, height_adj, width_adj).to_gpu();
 
             size_t size_image = image.cols * image.rows * image.channels();
             // 对齐 32 字节
@@ -552,7 +576,7 @@ namespace Estimator_net {
 
             CUDAKernel::warp_affine_bilinear_and_normalize_plane(
                     image.channels(),image_device, image.cols * image.channels(), image.cols, image.rows,
-                    tensor->gpu<float>(), width_adj, 480,
+                    tensor->gpu<float>(), width_adj, height_adj,
                     affine_matrix_device, 114,
                     normalize_, preprocess_stream
             );
@@ -564,12 +588,12 @@ namespace Estimator_net {
 
             auto copy_time_start = std::chrono::high_resolution_clock::now();
             //CV_32FC1能显示不能保存  CV_8UC1
-            cv::Mat image_gray(480, width_adj, CV_32FC1);
+            cv::Mat image_gray(height_adj, width_adj, CV_32FC1);
             bool DEBUG_IMG = false;
             //DEBUG图像的话
             if(DEBUG_IMG)
             {
-                checkCudaRuntime(cudaMemcpyAsync(image_gray.data, tensor->gpu<float>(), 480*width_adj*sizeof(float), cudaMemcpyDeviceToHost, tensor->get_stream()));
+                checkCudaRuntime(cudaMemcpyAsync(image_gray.data, tensor->gpu<float>(), height_adj*width_adj*sizeof(float), cudaMemcpyDeviceToHost, tensor->get_stream()));
                 checkCudaRuntime(cudaStreamSynchronize(tensor->get_stream()));
                 cv::imwrite("../src/mixvpr/11111111.jpg", image_gray);
                 cv::imshow("666",image_gray);
@@ -599,7 +623,7 @@ namespace Estimator_net {
             int*  keypoints = sp_out_keypoints->cpu<int>();
             float*  scores =  sp_out_scores->cpu<float>();
 
-            //---------------------提取数据 && SP后处理----------------------
+            //---------------------提取数据 && 后处理  extract data && SP_post----------------------
             float shift_width = width_adj/2;        //float shift_width = image_gray.cols / 2;
             float shift_height = height_adj/2;       //float shift_height = image_gray.rows / 2;
             float scale = max(shift_width,shift_height);              //float scale = max(image_gray.cols,image_gray.rows)/2;
@@ -696,6 +720,7 @@ namespace Estimator_net {
             tensor->resize(1, 1, height_adj, width_adj).to_gpu();
 
             size_t size_image = img.cols * img.rows * img.channels();
+
             // 对齐 32 字节
             size_t size_matrix = iLogger::upbound(sizeof(affineMatrix.d2i), 32);
             auto workspace = tensor->get_workspace();
@@ -707,7 +732,7 @@ namespace Estimator_net {
             auto* affine_matrix_host      = (float*)cpu_workspace;
             uint8_t* image_host           = size_matrix + cpu_workspace;
 
-            // sp_reeed up
+            // speed up
             memcpy(image_host, img.data, size_image);
             memcpy(affine_matrix_host, affineMatrix.d2i, sizeof(affineMatrix.d2i));
             checkCudaRuntime(cudaMemcpyAsync(image_device, image_host, size_image, cudaMemcpyHostToDevice, preprocess_stream));
@@ -728,7 +753,7 @@ namespace Estimator_net {
             auto cuda_resize_time_end = std::chrono::high_resolution_clock::now();
             auto copy_time_start = std::chrono::high_resolution_clock::now();
 
-            cv::Mat image_gray(480, width_adj, CV_32FC1);
+            cv::Mat image_gray(height_adj, width_adj, CV_32FC1);
             bool DEBUG_IMG = false;
 
             //DEBUG图像的话
@@ -736,7 +761,7 @@ namespace Estimator_net {
             {
                 checkCudaRuntime(cudaMemcpyAsync(image_gray.data, tensor->gpu<float>(), height_adj*width_adj*sizeof(float), cudaMemcpyDeviceToHost, tensor->get_stream()));
                 checkCudaRuntime(cudaStreamSynchronize(tensor->get_stream()));
-                cv::imwrite("../src/mixvpr/2.jpg", image_gray);
+                cv::imwrite("../src/2.jpg", image_gray);
                 cv::imshow("666",image_gray);
                 cv::waitKey(0);
             }
@@ -786,7 +811,7 @@ namespace Estimator_net {
             auto startTime_lg = std::chrono::high_resolution_clock::now();
             auto startTime_lg_pre = std::chrono::high_resolution_clock::now();
 
-            //---------------------提取数据 && SP后处理----------------------
+            //---------------------提取数据 && SP后处理 extract data && sp_post----------------------
             //640*480
 //            float shift_width = 320;    // image.width/2
 //            float shift_height = 240;   //image.height/2
@@ -856,20 +881,17 @@ namespace Estimator_net {
 
             //----------------后处理---------------------
 
+            //举个例子 for example
             //原图大小731h x 1024w
             // 匹配之后用到的 0.625 = 640/1024   0.656634748 = 480 / 731
             //scale = [w  ,h ]
-//            float scale_width = 640.f/width_0;
-//            float scale_height = 480.f/height_0;
-//
+
 //            float scale_width_0 = 640.f/width_0;
 //            float scale_height_0 = 480.f/height_0;
 //
 //            float scale_width_1 = 640.f/width_1;
 //            float scale_height_1 = 480.f/height_1;
 
-            float scale_width = 752.f/width_0;
-            float scale_height = 480.f/height_0;
 
             float scale_width_0 = 752.f/width_0;
             float scale_height_0 = 480.f/height_0;
@@ -886,17 +908,12 @@ namespace Estimator_net {
             auto lg_scores_dims = lightglue_model_->run_dims("mscores0");
 
             shared_ptr<TRT::Tensor> a =lg_out_matches0;
-            auto * test = a->cpu<int>();
+            auto* test = a->cpu<int>();
             lg_out_matches0->resize(lg_match_dims).to_gpu(false);
             lg_out_mscores0->resize(lg_scores_dims).to_gpu(false);
             mkpts0 = lg_out_matches0->clone();
             mkpts1 = lg_out_matches0->clone();
 
-//            for(int i =0;i<lg_in_kpts0->shape(1);i++)
-//            {
-//                cout<<lg_in_kpts0->cpu<float>()[i]<<endl;
-////                cout<<sp_out_keypoints->cpu<int>()[i]<<endl;
-//            }
 //            CUDAKernel::matches_post_process(sp_out_keypoints->gpu<int>(),sp_out_keypoints->gpu<int>(),
 //                                             lg_out_matches0->gpu<int>(),
 //                                             mkpts0->gpu<float>(), mkpts1->gpu<float>(),
@@ -918,15 +935,8 @@ namespace Estimator_net {
                                              lg_out_matches0->shape(0)*2,
                                              lightglue_model_->get_stream());
 
-
-//            for(int i =0;i<lg_out_matches0->shape(0);i++)
-//            {
-////                cout<<lg_out_matches0->cpu<int>()[i]<<endl;
-//                cout<<lg_out_matches0->cpu<int>()[i]<<endl;
-//            }
-
-            float * c = mkpts0->cpu<float>();
-            float * d = mkpts1->cpu<float>();
+            auto* c = mkpts0->cpu<float>();
+            auto* d = mkpts1->cpu<float>();
 
             cv::Point2f m0;
             cv::Point2f m1;
@@ -1148,7 +1158,6 @@ namespace Estimator_net {
         int sp_re_num = 0;
         int lg_num = 0;
 
-
         int gpu_ = 0;
 
     };
@@ -1160,24 +1169,18 @@ namespace Estimator_net {
         return instance;
     }
 
-    shared_ptr<Estimator> recover_estimator(const std::string & superpoint_re_engine_path, int gpuid){
+    shared_ptr<Estimator> recover_estimator (const std::string & engine_path,int gpuid){
         shared_ptr<EstimatorImpl> instance(new EstimatorImpl{});
-        if(!instance->startup(superpoint_re_engine_path,gpuid))
+        if(!instance->startup(engine_path,gpuid))
             instance.reset();
         return instance;
     }
 
-    void Estimator::img_callback(const sensor_msgs::CompressedImage msg) {
-
-        cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg,sensor_msgs::image_encodings::TYPE_8UC3);
-        image =cv_ptr->image;
-//            image.frame_id =  msg.header.frame_id;
-//            image.timestamp = msg.header.stamp;
-//            cv::imshow("img",cv_ptr->image);
-//            cv::waitKey(0);
-
-        sp_extractor(image);
-
-
+    shared_ptr<Estimator> single_init (const std::string & engine_path, const int& engine_type ,int gpuid){
+        shared_ptr<EstimatorImpl> instance(new EstimatorImpl{});
+        if(!instance->startup(engine_path,engine_type,gpuid))
+            instance.reset();
+        return instance;
     }
+
 }

@@ -177,9 +177,6 @@ void KeyFrame::compute_mix_des() {
     unsigned char* pimage = image_mix.data; //BGRBGRBGR TO BBBGGGRRR   用地址偏移做索引
 
 
-//    checkRuntime(cudaMalloc(&input_data_device, image_num*input_numel * sizeof(float)));
-
-//    cout<<"channel = "<<image_mix.channels()<<endl;
     //------------------使用多张图片做测试------------------------
     for(int i =0;i<image_num;i++)
     {
@@ -190,7 +187,6 @@ void KeyFrame::compute_mix_des() {
 
         for(int j = 0; j < image_area; ++j, pimage += 3){
             //注意这里的顺序 rgb 调换了
-
             *phost_r++ = (pimage[0] / 255.0f - mean[0]) / std[0];
             *phost_g++ = (pimage[1] / 255.0f - mean[1]) / std[1];
             *phost_b++ = (pimage[2] / 255.0f - mean[2]) / std[2];
@@ -217,7 +213,6 @@ void KeyFrame::compute_mix_des() {
     //用一个指针数组指定 input 和 output 在 GPU 内存中的指针
     float* bindings[] = {input_data_device, output_data_device};
 
-//    cout<<"start infrence"<<endl;
     //------------------------ 7.推理 --------------------------
     bool success = execution_context->enqueueV2((void**)bindings, stream,
                                                 nullptr);
@@ -228,7 +223,6 @@ void KeyFrame::compute_mix_des() {
 
     checkRuntime(cudaStreamSynchronize(stream));
 
-//    mix_descriptors.insert(mix_descriptors.begin(),output_data_host, output_data_host + 512);
     mix_descriptors = std::vector<float> (output_data_host, output_data_host + 512);
     descriptors_database.insert(descriptors_database.end(),output_data_host,output_data_host+512);
 
@@ -266,27 +260,18 @@ void KeyFrame::sort_vec_faiss( )
 
     float* xb;
     float* xq;
-//    std::vector<float> test;
+
     //构造数据集db
-//    xb = descriptors_database.data();
-
-//6400=50*128
-
-//    cout<<"index = "<<index<<endl;
-//    cout<<"size of xb = "<<endl;
     std::vector<float> test;
-
     int k;
     int window_size =25;
+
     if(index>=window_size)
     {
         test.resize((index-window_size+1)*512);
         test = vector<float>(descriptors_database.begin(),descriptors_database.begin()+(index-window_size+1)*512);
-//        memcpy(test.data(),descriptors_database.data(),(index-24)*512);
         xb = test.data();
         nb = test.size()/512;
-//        k = index-24;
-//        cout<<"k= "<<k<<" nb = "<<nb<<endl;
     }
     else
     {
@@ -365,10 +350,7 @@ void KeyFrame::computeWindowSuperpoint()
         window_keypoints.push_back(key);
     }
 
-    cv::Mat test;
-    image.convertTo(test,CV_8UC1);
-
-    static auto deep_net_estimator_window = Estimator_net::recover_estimator(sp_re_engine_path,0);
+    static auto deep_net_estimator_window = Estimator_net::single_init(sp_re_engine_path,1,0);
 
     deep_net_estimator_window->sp_re_desc.clear();
 
@@ -387,25 +369,22 @@ void KeyFrame::computeSuperpoint(){
 
     vector<cv::Point2f> _keypoints;
 
-    static auto  deep_net_estimator = Estimator_net::creat_estimator(sp_engine_path,sp_engine_path,0);
+    static auto  deep_net_estimator = Estimator_net::single_init(sp_engine_path,0,0);
 
     deep_net_estimator->sp_kpts.clear();
     deep_net_estimator->sp_kpts_norm.clear();
     deep_net_estimator->sp_scores.clear();
     deep_net_estimator->sp_desc.clear();
 
-//    local_descriptors.clear();
+    //  image size = 480 x 752
 
-
-//    cout<<image.size<<endl;  480 x 752
-
-    cv::Mat test;
-    image.convertTo(test,CV_8UC1);
+//    cv::Mat test;
+//    image.convertTo(test,CV_8UC1);
 
     cout<<"---in normal sp---"<<endl;
     cout<<"sp "<<index<<endl;
 
-    deep_net_estimator->sp_extractor(test);
+    deep_net_estimator->sp_extractor(image);
 
     _keypoints = deep_net_estimator->sp_kpts;
     scores = deep_net_estimator->sp_scores;
@@ -417,8 +396,7 @@ void KeyFrame::computeSuperpoint(){
         for(auto & i : _keypoints)
         {
             cv::KeyPoint key;
-            key.pt.y = i.y;
-            key.pt.x = i.x;
+            key.pt = i;
             keypoints.push_back(key);
         }
     }
@@ -431,23 +409,16 @@ void KeyFrame::computeSuperpoint(){
     float shift_height = image.rows/2;
     float scale = max(shift_width,shift_height);
 
-//    cout<<image.size<<endl;
     //pt_2d_uv 原始图像大小为480x752
     for(auto & i : point_2d_uv)
     {
         cv::KeyPoint key;
-        cv::KeyPoint key_test;
-//        key.pt.x = (i.x - shift_width) / scale ;
-//        key.pt.y = (i.y - shift_height) / scale ;
 
-        key_test.pt.y = i.y ;
-        key_test.pt.x = i.x ;
-        keypoints.push_back(key_test);
+        key.pt = i ;
+        keypoints.push_back(key);
     }
 
     cout<<"keypoints.size() ="<<keypoints.size() <<" sp_keypoints.size() " <<_keypoints.size()<<"+"<<" point2d_uv.size"<<point_2d_uv.size()<<endl;
-
-
 
     local_descriptors.insert(local_descriptors.end(),
                              window_local_descriptors.begin(),
@@ -608,7 +579,7 @@ void KeyFrame::light_glue_matcher(vector<cv::Point2f> &matched_2d_old, vector<cv
                                   const vector<cv::KeyPoint> &keypoints_old_norm,
                                   const int height_old, const int width_old){
 
-    static auto deep_net_estimator_lg = Estimator_net::creat_estimator(lg_engine_path,lg_engine_path,0);
+    static auto deep_net_estimator_lg = Estimator_net::single_init(lg_engine_path,2,0);
 
     deep_net_estimator_lg->lg_matches.clear();
     deep_net_estimator_lg->lg_scores.clear();
@@ -625,10 +596,6 @@ void KeyFrame::light_glue_matcher(vector<cv::Point2f> &matched_2d_old, vector<cv
 
     for(auto & i : window_keypoints)
     {
-//        cv::Point2f key;
-//        key.x = (i.pt.x - shift_width) / scale ;
-//        key.y = (i.pt.y - shift_height) / scale ;
-
         //不需要归一化，统一在lg中进行
         _keypoints.push_back(i.pt);
     }
@@ -637,17 +604,16 @@ void KeyFrame::light_glue_matcher(vector<cv::Point2f> &matched_2d_old, vector<cv
     {
         _keypoints_old.push_back(i.pt);
     }
-    //kpts0,kpts1,des0,des1
+
+    //kpts0,kpts1,des0,des1,img0.size,img1.size
     deep_net_estimator_lg->lg_matcher(_keypoints, _keypoints_old, window_local_descriptors, local_descriptors_old,480,752,480,752);
 
     cout<<"lg_mkpts0.size() = "<<deep_net_estimator_lg->lg_mkpts0.size()<<endl;
 
     vector<int> match_index0(deep_net_estimator_lg->lg_mkpts0.size());
     vector<int> match_index1(deep_net_estimator_lg->lg_mkpts1.size());
-//    vector<int> match_index(_keypoints.size(),-1);
-//    vector<float> match_score;
 
-    //获取匹配对 yuanbende
+    //获取匹配对 原本的
     for(int i =0; i<deep_net_estimator_lg->lg_mkpts0.size(); i++)
     {
         match_index0[i] = deep_net_estimator_lg->lg_matches[2*i];
@@ -692,13 +658,8 @@ void KeyFrame::light_glue_matcher(vector<cv::Point2f> &matched_2d_old, vector<cv
 //        matched_2d_old_norm.push_back(pt_norm);
 //    }
 
-//    for(auto &i:status )
-//        cout<<(int)i<<endl;
-
     //这两个是相等的
     cout<<"matched_2d_old.size() = "<<matched_2d_old.size()<<endl;
-//    cout<<"matched_2d_old_norm.size() = "<<matched_2d_old_norm.size()<<endl;
-
 }
 
 void KeyFrame::computeWindowBRIEFPoint()
@@ -1071,16 +1032,14 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
     Eigen::Vector3d relative_t;
     Quaterniond relative_q;
     double relative_yaw;
-//    cout<<"matched_2d_cur_size = "<<(int)matched_2d_cur.size()<<endl;
-//    cout<<"matched_3d_size = "<<(int)matched_3d.size()<<endl;
-//    cout<<"matched_2d_old_norm .size = "<<(int)matched_2d_old_norm.size()<<endl;
+
     if ((int)matched_2d_cur.size() > MIN_LOOP_NUM && (matched_2d_old_norm.size() == matched_3d.size()))
     {
         status.clear();
         PnPRANSAC(matched_2d_old_norm, matched_3d, status, PnP_T_old, PnP_R_old);
 //        cout<<"after pnp matched_2d_cur_size = "<<(int)matched_2d_cur.size()<<endl;
         reduceVector(matched_2d_cur, status);
-        cout<<"after reduce vec matched size  = "<<(int)matched_2d_cur.size()<<endl;
+        cout<<"after PNPRANSAC, matched size  = "<<(int)matched_2d_cur.size()<<endl;
         reduceVector(matched_2d_old, status);
 //        reduceVector(matched_2d_cur_norm, status);
         reduceVector(matched_2d_old_norm, status);

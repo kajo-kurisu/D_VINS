@@ -110,8 +110,7 @@ namespace Estimator_net {
                                 std::vector<float> &lg_in_desc0,
                                 std::vector<float> &lg_in_desc1,
                                 int height_0,int width_0,
-                                int height_1,int width_1
-        )=0;
+                                int height_1,int width_1) = 0;
 
         virtual void lg_matcher() = 0;
 
@@ -131,12 +130,11 @@ namespace Estimator_net {
         vector<cv::Point2f> lg_mkpts1;
         cv::Mat image;
 
-        void img_callback(const sensor_msgs::CompressedImage msg);
-
     };
 
     shared_ptr<Estimator> creat_estimator(const std::string & superpoint_engine_path,const std::string &lightglue_engine_path, int gpuid = 0);
     shared_ptr<Estimator> recover_estimator(const std::string & superpoint_engine_path, int gpuid = 0);
+    shared_ptr<Estimator> single_init(const std::string & superpoint_engine_path, const int &engine_type, int gpuid = 0);
 
 };
 

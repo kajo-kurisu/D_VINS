@@ -454,18 +454,16 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
     {
         for (unsigned int i = 1; i < keyframe->top_sim_index.size(); i++)
         {
-
-            //L2
-//            if ( keyframe->top_sim[i]<0.008)
-//            {
-//                find_loop = true;
-//            }
             //IP
             if ( keyframe->top_sim[i]>loop_back_thres)
             {
                 find_loop = true;
             }
-
+            //L2
+//            if ( keyframe->top_sim[i]<0.008)
+//            {
+//                find_loop = true;
+//            }
         }
     }
 
