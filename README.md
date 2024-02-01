@@ -174,7 +174,13 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sp_re_752x480_512/superpoint
 trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEngine=mix1.engine --warmUp=500 --duration=10 
 ```
 
-
+## performance in Euroc
+| 参数  | min_loop_num | solvePnPRansac | top_sim_thres | top_k | MAX_THETA_DIFF/ MAX_POSE_DIFF | 结果 | RMSE                | vins     | vins_loop |
+| ----- | ------------ | -------------- | ------------- | ----- | ----------------------------- | ---- | ------------------- | -------- | --------- |
+| MH_05 | 25           | 5.0/460        | 0.40 / 0.35   | 4     | 30.0 / 20.0                   |      | 0.0854              | 0.167053 | 0.095     |
+|       |              | 4.0/460        |               | 5     |                               |      | 0.083（-13.7%）  |          |           |
+| V2_03 |              | 4.0            | 0.50/0.45     |       |                               |      | 0.100               |          | 0.105     |
+|       |              |                | 0.45/0.4      |       |                               |      | 0.085（-19%）    |          |           |
 ## 8. Acknowledgements
 We use [ceres solver](http://ceres-solver.org/) for non-linear optimization and [DBoW2](https://github.com/dorian3d/DBoW2) for loop detection, a generic [camera model](https://github.com/hengli/camodocal) and [GeographicLib](https://geographiclib.sourceforge.io/).
 
