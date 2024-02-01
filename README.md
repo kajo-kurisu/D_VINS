@@ -3,7 +3,7 @@
 
 python==3.8.18
 
-onnx=1.13.1
+onnx==1.13.1
 
 onnxruntime==1.16.3
 
