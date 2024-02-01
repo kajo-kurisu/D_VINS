@@ -1,170 +1,178 @@
 # This project is based on VINS-FUSION. I've merged some methods in the field of feature extraction(superpoint) 、local feature matching(lightglue) and visual place recognition(MixVPR) into VINS-FUSION for loop closure. The README will be updated soon!
+### Env
 
-# VINS-Fusion
-## An optimization-based multi-sensor state estimator
+python==3.8.18
 
-<img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/vins_logo.png" width = 55% height = 55% div align=left />
-<img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/kitti.png" width = 34% height = 34% div align=center />
+onnx=1.13.1
 
-VINS-Fusion is an optimization-based multi-sensor state estimator, which achieves accurate self-localization for autonomous applications (drones, cars, and AR/VR). VINS-Fusion is an extension of [VINS-Mono](https://github.com/HKUST-Aerial-Robotics/VINS-Mono), which supports multiple visual-inertial sensor types (mono camera + IMU, stereo cameras + IMU, even stereo cameras only). We also show a toy example of fusing VINS with GPS. 
-**Features:**
-- multiple sensors support (stereo cameras / mono camera+IMU / stereo cameras+IMU)
-- online spatial calibration (transformation between camera and IMU)
-- online temporal calibration (time offset between camera and IMU)
-- visual loop closure
+onnxruntime==1.16.3
 
-<img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/kitti_rank.png" width = 80% height = 80% />
+torch==1.13.1+cu117
 
-We are the **top** open-sourced stereo algorithm on [KITTI Odometry Benchmark](http://www.cvlibs.net/datasets/kitti/eval_odometry.php) (12.Jan.2019).
+cuda == 11.7
 
-**Authors:** [Tong Qin](http://www.qintonguav.com), Shaozu Cao, Jie Pan, [Peiliang Li](https://peiliangli.github.io/), and [Shaojie Shen](http://www.ece.ust.hk/ece.php/profile/facultydetail/eeshaojie) from the [Aerial Robotics Group](http://uav.ust.hk/), [HKUST](https://www.ust.hk/)
+TensorRT == 8.6.1.6
 
-**Videos:**
+faiss == 1.7.2
 
-<a href="https://www.youtube.com/embed/1qye82aW7nI" target="_blank"><img src="http://img.youtube.com/vi/1qye82aW7nI/0.jpg" 
-alt="VINS" width="320" height="240" border="10" /></a>
+2070 SUPER
 
 
-**Related Paper:** (paper is not exactly same with code)
 
-* **Online Temporal Calibration for Monocular Visual-Inertial Systems**, Tong Qin, Shaojie Shen, IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS, 2018), **best student paper award** [pdf](https://ieeexplore.ieee.org/abstract/document/8593603)
+### export onnx
 
-* **VINS-Mono: A Robust and Versatile Monocular Visual-Inertial State Estimator**, Tong Qin, Peiliang Li, Shaojie Shen, IEEE Transactions on Robotics [pdf](https://ieeexplore.ieee.org/document/8421746/?arnumber=8421746&source=authoralert) 
+- mixvpr
 
+```python
+    model = VPRModel(backbone_arch='resnet50',
+                     layers_to_crop=[4],
+                     agg_arch='MixVPR',
+                     agg_config={'in_channels': 1024,
+                                 'in_h': 20,
+                                 'in_w': 20,
+                                 'out_channels': 256,
+                                 'mix_depth': 4,
+                                 'mlp_ratio': 1,
+                                 'out_rows': 2},
+                     )
 
-*If you use VINS-Fusion for your academic research, please cite our related papers. [bib](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/paper_bib.txt)*
+    state_dict = torch.load('/home/sy/sy/Mix_ws/src/mixvpr/model/resnet50_MixVPR_512_channels(256)_rows(2).ckpt')
+    model.load_state_dict(state_dict)
+    model.eval()
+    model.cpu()
 
-## 1. Prerequisites
-### 1.1 **Ubuntu** and **ROS**
-Ubuntu 64-bit 16.04 or 18.04.
-ROS Kinetic or Melodic. [ROS Installation](http://wiki.ros.org/ROS/Installation)
+    input = torch.randn(1, 3, 320, 320)
+    output_path = '/home/sy/sy/Mix_ws/src/mixvpr/mix_512.onnx'
 
+    torch.onnx.export(model, input, output_path,
+                      verbose=False,
+                      opset_version=13,
+                      input_names=['img'],
+                      output_names=['des'],
+                      )
 
-### 1.2. **Ceres Solver**
-Follow [Ceres Installation](http://ceres-solver.org/installation.html).
-
-
-## 2. Build VINS-Fusion
-Clone the repository and catkin_make:
-```
-    cd ~/catkin_ws/src
-    git clone https://github.com/HKUST-Aerial-Robotics/VINS-Fusion.git
-    cd ../
-    catkin_make
-    source ~/catkin_ws/devel/setup.bash
-```
-(if you fail in this step, try to find another computer with clean system or reinstall Ubuntu and ROS)
-
-## 3. EuRoC Example
-Download [EuRoC MAV Dataset](http://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) to YOUR_DATASET_FOLDER. Take MH_01 for example, you can run VINS-Fusion with three sensor types (monocular camera + IMU, stereo cameras + IMU and stereo cameras). 
-Open four terminals, run vins odometry, visual loop closure(optional), rviz and play the bag file respectively. 
-Green path is VIO odometry; red path is odometry under visual loop closure.
-
-### 3.1 Monocualr camera + IMU
-
-```
-    roslaunch vins vins_rviz.launch
-    rosrun vins vins_node ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_mono_imu_config.yaml 
-    (optional) rosrun loop_fusion loop_fusion_node ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_mono_imu_config.yaml 
-    rosbag play YOUR_DATASET_FOLDER/MH_01_easy.bag
+    model_sim, flag = onnxsim.simplify(output_path)
+    if flag:
+        onnx.save(model_sim, output_path)
+        print("---------simplify onnx successfully---------")
+    else:
+        print("---------simplify onnx failed-----------")
 ```
 
-### 3.2 Stereo cameras + IMU
+- SP + LG
+
+1、Download the weights from here  [superpoint_weights](https://github.com/cvg/LightGlue/releases/download/v0.1_arxiv/superpoint_v1.pth)
+
+2、Follow the guidence of [lightglue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) to export SP and LG onnx, and I suggest you to export with my params if you dont want to change any codes.
 
 ```
-    roslaunch vins vins_rviz.launch
-    rosrun vins vins_node ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_stereo_imu_config.yaml 
-    (optional) rosrun loop_fusion loop_fusion_node ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_stereo_imu_config.yaml 
-    rosbag play YOUR_DATASET_FOLDER/MH_01_easy.bag
+--dynamic
+--extractor_type=superpoint
+--extractor_path=YOUR_SP_ONNX_PATH
+--lightglue_path=YOUR_LG_ONNX_PATH
+--max_num_keypoints=YOUR_NUM / MY_NUM = 512
 ```
 
-### 3.3 Stereo cameras
+example :
 
-```
-    roslaunch vins vins_rviz.launch
-    rosrun vins vins_node ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_stereo_config.yaml 
-    (optional) rosrun loop_fusion loop_fusion_node ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_stereo_config.yaml 
-    rosbag play YOUR_DATASET_FOLDER/MH_01_easy.bag
-```
+```python
+if __name__ == "__main__":
+    #generate onnx model
+    args = parse_args()
+    export_onnx(**vars(args))
 
-<img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/euroc.gif" width = 430 height = 240 />
+    #simplify your onnx model
+	#replace it with your exsited onnx path
+    output_path_sp=('/home/sy/sy/Mix_ws/src/mixvpr/model/sp+sg/superpoint_512_new.onnx')
 
+    print('----------start simplifying sp-----------')
+    model_sim, flag = onnxsim.simplify(output_path_sp)
+    if flag:
+        onnx.save(model_sim, output_path_sp)
+        print("---------simplify sp successfully---------")
+    else:
+        print("---------simplify sp failed-----------")
+        
+    #simplify your onnx model
+	#replace it with your exsited onnx path
+    output_path_lg=('/home/sy/sy/Mix_ws/src/mixvpr/model/sp+sg/superpoint_512_new.onnx')
 
-## 4. KITTI Example
-### 4.1 KITTI Odometry (Stereo)
-Download [KITTI Odometry dataset](http://www.cvlibs.net/datasets/kitti/eval_odometry.php) to YOUR_DATASET_FOLDER. Take sequences 00 for example,
-Open two terminals, run vins and rviz respectively. 
-(We evaluated odometry on KITTI benchmark without loop closure funtion)
-```
-    roslaunch vins vins_rviz.launch
-    (optional) rosrun loop_fusion loop_fusion_node ~/catkin_ws/src/VINS-Fusion/config/kitti_odom/kitti_config00-02.yaml
-    rosrun vins kitti_odom_test ~/catkin_ws/src/VINS-Fusion/config/kitti_odom/kitti_config00-02.yaml YOUR_DATASET_FOLDER/sequences/00/ 
-```
-### 4.2 KITTI GPS Fusion (Stereo + GPS)
-Download [KITTI raw dataset](http://www.cvlibs.net/datasets/kitti/raw_data.php) to YOUR_DATASET_FOLDER. Take [2011_10_03_drive_0027_synced](https://s3.eu-central-1.amazonaws.com/avg-kitti/raw_data/2011_10_03_drive_0027/2011_10_03_drive_0027_sync.zip) for example.
-Open three terminals, run vins, global fusion and rviz respectively. 
-Green path is VIO odometry; blue path is odometry under GPS global fusion.
-```
-    roslaunch vins vins_rviz.launch
-    rosrun vins kitti_gps_test ~/catkin_ws/src/VINS-Fusion/config/kitti_raw/kitti_10_03_config.yaml YOUR_DATASET_FOLDER/2011_10_03_drive_0027_sync/ 
-    rosrun global_fusion global_fusion_node
-```
-
-<img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/kitti.gif" width = 430 height = 240 />
-
-## 5. VINS-Fusion on car demonstration
-Download [car bag](https://drive.google.com/open?id=10t9H1u8pMGDOI6Q2w2uezEq5Ib-Z8tLz) to YOUR_DATASET_FOLDER.
-Open four terminals, run vins odometry, visual loop closure(optional), rviz and play the bag file respectively. 
-Green path is VIO odometry; red path is odometry under visual loop closure.
-```
-    roslaunch vins vins_rviz.launch
-    rosrun vins vins_node ~/catkin_ws/src/VINS-Fusion/config/vi_car/vi_car.yaml 
-    (optional) rosrun loop_fusion loop_fusion_node ~/catkin_ws/src/VINS-Fusion/config/vi_car/vi_car.yaml 
-    rosbag play YOUR_DATASET_FOLDER/car.bag
+    print('----------start simplifying lg-----------')
+    model_sim, flag = onnxsim.simplify(output_path_lg)
+    if flag:
+        onnx.save(model_sim, output_path_lg)
+        print("---------simplify lg successfully---------")
+    else:
+        print("---------simplify lg failed-----------")
 ```
 
-<img src="https://github.com/HKUST-Aerial-Robotics/VINS-Fusion/blob/master/support_files/image/car_gif.gif" width = 430 height = 240  />
 
 
-## 6. Run with your devices 
-VIO is not only a software algorithm, it heavily relies on hardware quality. For beginners, we recommend you to run VIO with professional equipment, which contains global shutter cameras and hardware synchronization.
+- SP_RECOVER
 
-### 6.1 Configuration file
-Write a config file for your device. You can take config files of EuRoC and KITTI as the example. 
+1、Download the weights from here  [superpoint_weights](https://github.com/cvg/LightGlue/releases/download/v0.1_arxiv/superpoint_v1.pth)
 
-### 6.2 Camera calibration
-VINS-Fusion support several camera models (pinhole, mei, equidistant). You can use [camera model](https://github.com/hengli/camodocal) to calibrate your cameras. We put some example data under /camera_models/calibrationdata to tell you how to calibrate.
+2、see ultrapoint.py and follow the example
+
+```python
+if __name__ == "__main__":
+    model = ultrapoint.UltraPoint().eval()
+    model.cpu()
+    # 确定好网络输入和输出路径
+    #input img_size
+    image = torch.randn(1, 1, 480, 752)
+    #input kpts.size
+    keypoints = torch.randn(1, 512, 2)
+    #replace it with yopur path
+    output_path = '/home/sy/sy/Mix_ws/src/mixvpr/model/superpoint_recover_des_480x752.onnx'
+
+    # 载入模型，输入、opset版本以及输入输出的名字
+    # options
+    torch.onnx.export(model,
+                      (image,keypoints),
+                      output_path,
+                      verbose=False,
+                      opset_version=17,
+                      input_names=["image_r","keypoints_r"],
+                      output_names=["scores_r","des_r"],
+                      dynamic_axes={
+                          "keypoints_r": {1: "num_keypoints"},
+                          "des_r": {1: "num_keypoints"},
+                          "scores_r": {0: "num_keypoints"},
+                      }
+                      )
+    # 模型简化 simplify your model
+    model_sim, flag = onnxsim.simplify(output_path)
+    if flag:
+        onnx.save(model_sim, output_path)
+        print("---------simplify sp_re successfully---------")
+    else:
+        print("---------simplify sp_re failed-----------")
+        
 ```
-cd ~/catkin_ws/src/VINS-Fusion/camera_models/camera_calib_example/
-rosrun camera_models Calibrations -w 12 -h 8 -s 80 -i calibrationdata --camera-model pinhole
-```
 
-## 7. Docker Support
-To further facilitate the building process, we add docker in our code. Docker environment is like a sandbox, thus makes our code environment-independent. To run with docker, first make sure [ros](http://wiki.ros.org/ROS/Installation) and [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/) are installed on your machine. Then add your account to `docker` group by `sudo usermod -aG docker $YOUR_USER_NAME`. **Relaunch the terminal or logout and re-login if you get `Permission denied` error**, type:
-```
-cd ~/catkin_ws/src/VINS-Fusion/docker
-make build
-```
-Note that the docker building process may take a while depends on your network and machine. After VINS-Fusion successfully built, you can run vins estimator with script `run.sh`.
-Script `run.sh` can take several flags and arguments. Flag `-k` means KITTI, `-l` represents loop fusion, and `-g` stands for global fusion. You can get the usage details by `./run.sh -h`. Here are some examples with this script:
-```
-# Euroc Monocualr camera + IMU
-./run.sh ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_mono_imu_config.yaml
 
-# Euroc Stereo cameras + IMU with loop fusion
-./run.sh -l ~/catkin_ws/src/VINS-Fusion/config/euroc/euroc_mono_imu_config.yaml
 
-# KITTI Odometry (Stereo)
-./run.sh -k ~/catkin_ws/src/VINS-Fusion/config/kitti_odom/kitti_config00-02.yaml YOUR_DATASET_FOLDER/sequences/00/
+### 将onnx转成engine文件 / transform onnx to .engine
 
-# KITTI Odometry (Stereo) with loop fusion
-./run.sh -kl ~/catkin_ws/src/VINS-Fusion/config/kitti_odom/kitti_config00-02.yaml YOUR_DATASET_FOLDER/sequences/00/
-
-#  KITTI GPS Fusion (Stereo + GPS)
-./run.sh -kg ~/catkin_ws/src/VINS-Fusion/config/kitti_raw/kitti_10_03_config.yaml YOUR_DATASET_FOLDER/2011_10_03_drive_0027_sync/
+Example:
 
 ```
-In Euroc cases, you need open another terminal and play your bag file. If you need modify the code, simply re-run `./run.sh` with proper auguments after your changes.
+//SP
+trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sim_752x480_512/superpoint_512.onnx'  --fp16 --minShapes=image:1x1x480x752 --optShapes=image:1x1x480x752 --maxShapes=image:1x1x480x752  --saveEngine=/home/sy/sy/Mix_ws/src/mixvpr/model/sim_752x480_512/superpoint_752x480_512.engine --warmUp=500 --duration=10
+
+
+//LG
+trtexec --onnx='/home/sy/sy/lightglue_ws/src/LightGlue-ONNX/weights/my/sim_752x480_1024/superpoint_lightglue.onnx'  --fp16 --saveEngine='/home/sy/sy/Mix_ws/src/mixvpr/model/sim_752x480_1024/superpoint_lightglue_10_1024.engine' --warmUp=500 --duration=10 --minShapes=kpts0:1x10x2,kpts1:1x10x2,desc0:1x10x256,desc1:1x10x256 --optShapes=kpts0:1x512x2,kpts1:1x512x2,desc0:1x512x256,desc1:1x512x256  --maxShapes=kpts0:1x1024x2,kpts1:1x1024x2,desc0:1x1024x256,desc1:1x1024x256
+
+
+//SP_RE
+trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sp_re_752x480_512/superpoint_recover_des_480x752.onnx'  --fp16 --saveEngine='/home/sy/sy/Mix_ws/src/mixvpr/model/sp_re_752x480_512/superpoint_recover_des_480x752.engine' --warmUp=500 --duration=10 --minShapes=keypoints_r:1x20x2  --optShapes=keypoints_r:1x150x2  --maxShapes=keypoints_r:1x512x2
+
+
+//mixvpr
+trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEngine=mix1.engine --warmUp=500 --duration=10 
+```
 
 
 ## 8. Acknowledgements
