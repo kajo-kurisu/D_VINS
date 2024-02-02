@@ -188,10 +188,10 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEng
 |       |              |                | 0.45/0.4      |       |                               |      | 0.085（-19%）    |          |           |
 
 
-| **方法**                                   | superpoint+sp_re+lightglue | MixVPR  | VINS （merge all）    |
+| **方法**                                   | superpoint+sp_re+lightglue | MixVPR + faiss  | VINS （merge all）    |
 | ------------------------------------------ | -------------------------- | ------- | ------------- |
 | 图像大小/ img_size                         | 752*480                    | 320*320 | 752*480       |
-| 特征提取时间 / extract time    /ms         | 3.9+2.5+6                  | 5       | 3.9 + 2.5 + 6 |
+| 特征提取时间 / extract time    /ms         | 3.9+2.5                  | 5       | 3.9 + 2.5 + 6 |
 | 匹配时间/ match time     /ms               | 3                          | 0.3     | 4.1 + 0.3     |
 | 显存占用/ Memory MB（2070super + i7-8700） |                            |         | 600 MB          |
 
