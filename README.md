@@ -196,7 +196,8 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEng
 | 显存占用/ Memory MB（2070super + i7-8700） |                            |         | 600 MB          |
 
 ## 6、TODO
-
+- [ ] Rewrite the code in the MIXVPR section for faster inference
+- [ ] Replace some functions in this project with kernal function if possible.
 ## 7、 Acknowledgements
 This project is based on [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
 
