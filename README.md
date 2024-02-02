@@ -181,7 +181,17 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEng
 |       |              | 4.0/460        |               | 5     |                               |      | 0.083（-13.7%）  |          |           |
 | V2_03 |              | 4.0            | 0.50/0.45     |       |                               |      | 0.100               |          | 0.105     |
 |       |              |                | 0.45/0.4      |       |                               |      | 0.085（-19%）    |          |           |
+
+
+| **方法**                                   | superpoint+sp_re+lightglue | MixVPR  | VINS （merge all）    |
+| ------------------------------------------ | -------------------------- | ------- | ------------- |
+| 图像大小/ img_size                         | 752*480                    | 320*320 | 752*480       |
+| 特征提取时间 / extract time    /ms         | 3.9+2.5+6                  | 5       | 3.9 + 2.5 + 6 |
+| 匹配时间/ match time     /ms               | 3                          | 0.3     | 4.1 + 0.3     |
+| 显存占用/ Memory MB（2070super + i7-8700） |                            |         | 600 MB          |
+
 ## 8. Acknowledgements
+This project is based on [Vins-Fusion]((https://github.com/HKUST-Aerial-Robotics/VINS-Fusion))
 We use [ceres solver](http://ceres-solver.org/) for non-linear optimization and [DBoW2](https://github.com/dorian3d/DBoW2) for loop detection, a generic [camera model](https://github.com/hengli/camodocal) and [GeographicLib](https://geographiclib.sourceforge.io/).
 
 I use [superpoint](https://github.com/rpautrat/SuperPoint) 、[lightglue](https://github.com/cvg/LightGlue)、[MixVPR](https://github.com/amaralibey/MixVPR) for loop closure,and the part of TensorRT infrence is based on [Linfer](https://github.com/l-sf/Linfer)
