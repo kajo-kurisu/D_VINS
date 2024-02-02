@@ -1,5 +1,6 @@
 # This project is based on VINS-FUSION. I've merged some methods in the field of feature extraction(superpoint) 、local feature matching(lightglue) and visual place recognition(MixVPR) into VINS-FUSION for loop closure. The README will be updated soon!
-### Env
+### 仅供学习使用 | For study use only
+### 1、Env
 
 python==3.8.18
 
@@ -15,11 +16,15 @@ TensorRT == 8.6.1.6
 
 faiss == 1.7.2
 
+opencv == 3.4.10 
+
 2070 SUPER
 
+### 2、Build Vins-Fusion
+please refer to [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
 
 
-### export onnx
+### 3、export onnx
 
 - mixvpr
 
@@ -153,7 +158,7 @@ if __name__ == "__main__":
 
 
 
-### 将onnx转成engine文件 / transform onnx to .engine
+### 4、将onnx转成engine文件 / transform onnx to .engine
 
 Example:
 
@@ -174,7 +179,7 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sp_re_752x480_512/superpoint
 trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEngine=mix1.engine --warmUp=500 --duration=10 
 ```
 
-## performance in Euroc
+## 5、performance in Euroc
 | 参数  | min_loop_num | solvePnPRansac | top_sim_thres | top_k | MAX_THETA_DIFF/ MAX_POSE_DIFF | 结果 | RMSE                | vins     | vins_loop |
 | ----- | ------------ | -------------- | ------------- | ----- | ----------------------------- | ---- | ------------------- | -------- | --------- |
 | MH_05 | 25           | 5.0/460        | 0.40 / 0.35   | 4     | 30.0 / 20.0                   |      | 0.0854              | 0.167053 | 0.095     |
@@ -190,16 +195,14 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEng
 | 匹配时间/ match time     /ms               | 3                          | 0.3     | 4.1 + 0.3     |
 | 显存占用/ Memory MB（2070super + i7-8700） |                            |         | 600 MB          |
 
-## 8. Acknowledgements
+## 6、TODO
+
+## 7、 Acknowledgements
 This project is based on [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
 
 We use [ceres solver](http://ceres-solver.org/) for non-linear optimization and [DBoW2](https://github.com/dorian3d/DBoW2) for loop detection, a generic [camera model](https://github.com/hengli/camodocal) and [GeographicLib](https://geographiclib.sourceforge.io/).
 
 I use [superpoint](https://github.com/rpautrat/SuperPoint) 、[lightglue](https://github.com/cvg/LightGlue)、[MixVPR](https://github.com/amaralibey/MixVPR) for loop closure,and the part of TensorRT infrence is based on [Linfer](https://github.com/l-sf/Linfer)
 
-## 9. License
+## 8、 License
 The source code is released under [GPLv3](http://www.gnu.org/licenses/) license.
-
-We are still working on improving the code reliability. For any technical issues, please contact Tong Qin <qintonguavATgmail.com>.
-
-For commercial inquiries, please contact Shaojie Shen <eeshaojieATust.hk>.
