@@ -181,29 +181,35 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sp_re_752x480_512/superpoint
 trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEngine=mix1.engine --warmUp=500 --duration=10 
 ```
 
-## 5、performance in Euroc
-| 参数  | min_loop_num | solvePnPRansac | top_sim_thres | top_k | MAX_THETA_DIFF/ MAX_POSE_DIFF | 结果 | RMSE                | vins     | vins_loop |
-| ----- | ------------ | -------------- | ------------- | ----- | ----------------------------- | ---- | ------------------- | -------- | --------- |
-| MH_05 | 25           | 5.0/460        | 0.40 / 0.35   | 4     | 30.0 / 20.0                   |      | 0.0854              | 0.167053 | 0.095     |
-|       |              | 4.0/460        |               | 5     |                               |      | 0.083（-13.7%）  |          |           |
-| V2_03 |              | 4.0            | 0.50/0.45     |       |                               |      | 0.100               |          | 0.105     |
-|       |              |                | 0.45/0.4      |       |                               |      | 0.085（-19%）    |          |           |
+## 5、performance in some datasets(EuRoC, KAIST urban, 4Seasons)
+
+### matching examples
+
+![euroc](./support_images/euroc.png)
+
+![kaist](./support_images/kaist.png)
+
+![4seasons](./support_images/4seasons.png)
+
+| image size                                | 752*480(euroc) | 800*400(4seasons) | 1280*560(KAIST urban) |
+| ----------------------------------------- | -------------- | ----------------- | --------------------- |
+| Global Feature Extraction (ms)            | 1.5            | 2                 | 2.3                   |
+| Keyframe Retrival (ms)                    | 0.8            | 2.2               | 1.7                   |
+| Local Feature Extraction(512 points) (ms) | 6.1            | 5.4               | 10.3                  |
+| Local Feature Matching (ms)               | 4.1            | 4.1               | 3.8                   |
+| Total Time cost (ms)                      | 12.5           | 13.7              | 18.1                  |
+| Total Memory cost (MB)                    | 422            | 400               | 600                   |
 
 
-| **方法**                                   | superpoint+sp_re+lightglue | MixVPR + faiss  | VINS （merge all）    |
-| ------------------------------------------ | -------------------------- | ------- | ------------- |
-| 图像大小/ img_size                         | 752*480                    | 320*320 | 752*480       |
-| 特征提取时间 / extract time    /ms         | 3.9+2.5                  | 5       | 3.9 + 2.5 + 6 |
-| 匹配时间/ match time     /ms               | 3                          | 0.3     | 4.1 + 0.3     |
-| 显存占用/ Memory MB（2070super + i7-8700） |                            |         | 600 MB          |
 
 ## 6、TODO
-- [ ] Rewrite the code in the MIXVPR section for faster inference
+
 - [ ] Replace some functions in this project with kernal function if possible.
+
 ## 7、 Acknowledgements
 This project is based on [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion)
 
-We use [ceres solver](http://ceres-solver.org/) for non-linear optimization and [DBoW2](https://github.com/dorian3d/DBoW2) for loop detection, a generic [camera model](https://github.com/hengli/camodocal) and [GeographicLib](https://geographiclib.sourceforge.io/).
+We use [ceres solver](http://ceres-solver.org/) for non-linear optimization, a generic [camera model](https://github.com/hengli/camodocal) and [GeographicLib](https://geographiclib.sourceforge.io/).
 
 I use [superpoint](https://github.com/rpautrat/SuperPoint) 、[lightglue](https://github.com/cvg/LightGlue)、[MixVPR](https://github.com/amaralibey/MixVPR) for loop closure,and the part of TensorRT infrence is based on [Linfer](https://github.com/l-sf/Linfer)
 
