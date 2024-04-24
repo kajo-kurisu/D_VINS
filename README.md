@@ -162,6 +162,8 @@ if __name__ == "__main__":
 
 Example:
 
+trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sim_800x400_512/superpoint_512.onnx'  --fp16 --minShapes=image:1x1x400x800 --optShapes=image:1x1x400x800 --maxShapes=image:1x1x400x800  --saveEngine=/home/sy/sy/Mix_ws/src/mixvpr/model/sim_800x400_512/superpoint_800x400_512.engine --warmUp=500 --duration=10
+
 ```
 //SP
 trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/sim_752x480_512/superpoint_512.onnx'  --fp16 --minShapes=image:1x1x480x752 --optShapes=image:1x1x480x752 --maxShapes=image:1x1x480x752  --saveEngine=/home/sy/sy/Mix_ws/src/mixvpr/model/sim_752x480_512/superpoint_752x480_512.engine --warmUp=500 --duration=10
