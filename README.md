@@ -1,7 +1,6 @@
-# This project is based on VINS-FUSION. I've merged some methods in the field of feature extraction(superpoint) 、local feature matching(lightglue) and visual place recognition(MixVPR) into VINS-FUSION for loop closure. The README will be updated soon!
+# This project is based on VINS-FUSION. I've merged superpoint、lightglue and MixVPR into VINS-FUSION for loop closure. The README and code will be updated soon!
 ### 仅供学习使用 | For study use only
 ### 1、Env
-
 python==3.8.18
 
 onnx==1.13.1
