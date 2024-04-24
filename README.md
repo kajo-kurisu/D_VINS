@@ -1,5 +1,6 @@
 # This project is based on VINS-FUSION. I've merged superpoint、lightglue and MixVPR into VINS-FUSION for loop closure. The README and code will be updated soon!
 ### 仅供学习使用 | For study use only
+## NOTE: There is a fatal bug in the previous version of this project and if u have copied the previous version of this project,dont waste ur time to try anything. Please refer to the coming code and i will try my best to make it easy to use.
 ### 1、Env
 python==3.8.18
 
