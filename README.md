@@ -182,6 +182,7 @@ trtexec --onnx='/home/sy/sy/Mix_ws/src/mixvpr/model/mix1.onnx'  --fp16 --saveEng
 ```
 
 ## 5、performance in some datasets(EuRoC, KAIST urban, 4Seasons)
+Our method improves accuracy by 20% over vins-fusion on euroc and even more on difficult datasets such as KAIST urban and 4seasons. It is able to cope with urban highway scenarios and seasonal change scenarios.
 
 ### matching examples
 
