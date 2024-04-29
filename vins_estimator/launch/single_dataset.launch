@@ -1,0 +1,11 @@
+<launch>
+<include file = "/home/sy/sy/vins_fusion_ws/src/VINS-Fusion/vins_estimator/launch/vins_rviz.launch">
+    
+</include>
+	<arg name="config" default="/home/sy/sy/vins_fusion_ws/src/VINS-Fusion/config/euroc/euroc_stereo_imu_config.yaml"/>
+	<node pkg="vins" type="vins_node" name="vins_estimator"
+    		args = "$(arg config)"/>
+    	<node pkg="loop_fusion" type="loop_fusion_node" name="loop_fusion"
+    		args = "$(arg config)"/>
+</launch>
+

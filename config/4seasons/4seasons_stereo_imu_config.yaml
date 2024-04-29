@@ -1,0 +1,98 @@
+%YAML:1.0
+
+#common parameters
+#support: 1 imu 1 cam; 1 imu 2 cam: 2 cam; 
+imu: 1         
+num_of_cam: 2  
+
+imu_topic: "/imu0"
+image0_topic: "/cam0/image_raw"
+image1_topic: "/cam1/image_raw"
+output_path: "/home/sy/sy/vins_fusion_ws/src/VINS-Fusion/output/4seasons"
+
+cam0_calib: "cam0.yaml"
+cam1_calib: "cam1.yaml"
+image_width: 800
+image_height: 400
+
+# Extrinsic parameter between IMU and Camera.
+estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+                        # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [-0.9998852242642397399, -0.0068901618597663892, 0.013493108151807023934, 0.17620148743651413264,
+           -0.0135229610785441217, 0.00430463702933839, -0.99989929474108175553, -0.05574406512526512603,
+           0.0068313850512411797037, -0.99996699734020761574, -0.0043973183521107259605, 0.0022354924170570253556,
+           0, 0, 0, 1]
+
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [-0.9999948729203221398, 0.00317346727762530384, 0.00042806367126334153121, -0.12431176703129295982,
+           -0.00041104034603049373, 0.00536297969589576, -0.99998553464268428257, -0.05668339783130050196,
+          -0.003175717069064739764, -0.99998058358861111991, -0.0053616477763836672067, 0.0016487325719239008604,
+          0, 0, 0, 1]
+
+#Multiple thread support
+multiple_thread: 1
+
+#feature traker paprameters
+max_cnt: 400            # max feature number in feature tracking 150 for old town
+min_dist: 25            # min distance between two features 
+freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
+F_threshold: 1.0        # ransac threshold (pixel)
+show_track: 1           # publish tracking image as topic
+flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
+
+#optimization parameters
+max_solver_time: 0.08  # max solver itration time (ms), to guarantee real time
+max_num_iterations: 15   # max solver itrations, to guarantee real time
+keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
+
+#imu parameters       The more accurate parameters you provide, the better performance
+#acc_n: 0.1          # accelerometer measurement noise standard deviation. 
+#gyr_n: 0.01         # gyroscope measurement noise standard deviation.     
+#acc_w: 0.001        # accelerometer bias random work noise standard deviation.  
+#gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.     
+#g_norm: 9.805     # gravity magnitude 9.8107 for old town
+
+#之前测的
+#acc_n: 0.16          # accelerometer measurement noise standard deviation.  0.16
+#gyr_n: 0.001         # gyroscope measurement noise standard deviation.      0.008
+#acc_w: 0.00004        # accelerometer bias random work noise standard deviation.  0.00004
+#gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.      2.0e-6   
+#g_norm: 9.81007     # gravity magnitude 9.8107 for old town 9.81007
+
+#same with ori_vins
+acc_n: 0.16          # accelerometer measurement noise standard deviation. 0.16
+gyr_n: 0.008         # gyroscope measurement noise standard deviation.      0.008
+acc_w: 0.00004        # accelerometer bias random work noise standard deviation.  0.00004
+gyr_w: 2.0e-6       # gyroscope bias random work noise standard deviation.      2.0e-6   
+g_norm: 9.81007     # gravity magnitude 9.8107 for old town 9.81007
+
+#unsynchronization parameters
+estimate_td: 1                      # online estimate time offset between camera and imu
+td: -4.926753519571215e-06                             # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
+
+#loop closure parameters
+load_previous_pose_graph: 0        # load and reuse previous pose graph; load from 'pose_graph_save_path'
+pose_graph_save_path: "/home/sy/sy/vins_fusion_ws/src/VINS-Fusion/output/pose_graph/" # save and load path
+save_image: 1                   # save image in pose graph for visualization prupose; you can close this function by setting 0
+
+height_adj: 400
+width_adj: 800
+
+PNP_INFLATION: 4.0
+USE_SP: 1
+MIN_LOOP_NUM: 20
+loop_top_thrers: 0.45
+loop_back_thres: 0.40
+MAX_THETA_DIFF: 90.0
+MAX_POSE_DIFF: 40.0 
+USE_BAG_LOAD: 1
+FAST_BAG: 1
+F_BAG_PATH: /media/sy/data2/datasets/KAIST/camera/bag/39.bag
