@@ -1,6 +1,6 @@
-# This project is based on VINS-FUSION. I've merged superpoint、lightglue and MixVPR into VINS-FUSION for loop closure. The README and code will be updated soon!
+# This project is based on VINS-FUSION. I've merged superpoint、lightglue and MixVPR into VINS-FUSION for loop closure.If it is helpful to you ,please consider starring this repository.
 ### 仅供学习使用 | For study use only
-## NOTE: There is a fatal bug in the previous version of this project and if u have copied the previous version of this project,dont waste ur time to try anything. Please refer to the coming code and i will try my best to make it easy to use.
+
 ### 1、Env
 python==3.8.18
 
@@ -69,7 +69,7 @@ please refer to [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusi
 1、Download the weights from here  [superpoint_weights](https://github.com/cvg/LightGlue/releases/download/v0.1_arxiv/superpoint_v1.pth)
 
 2、Follow the guidence of [lightglue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) to export SP and LG onnx, and I suggest you to export with my params if you dont want to change any codes.
-Also, you can directly download the superpoint_512.onnx and superpoint_lightglue.onnx provided in [Lightglue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX/releases) v0.1.3
+Also, you can directly download the superpoint_512.onnx and superpoint_lightglue.onnx provided in [model](https://github.com/fabio-sim/LightGlue-ONNX/releases) v0.1.3
 
 See [issue3](https://github.com/kajo-kurisu/D_VINS/issues/3) for more imformation
 
