@@ -70,6 +70,7 @@ please refer to [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusi
 
 2、Follow the guidence of [lightglue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) to export SP and LG onnx, and I suggest you to export with my params if you dont want to change any codes.
 Also, you can directly download the superpoint_512.onnx and superpoint_lightglue.onnx provided in [Lightglue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX/releases) v0.1.3
+
 See [issue3](https://github.com/kajo-kurisu/D_VINS/issues/3) for more imformation
 
 ```
