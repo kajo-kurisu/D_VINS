@@ -1,5 +1,8 @@
 # This project is based on VINS-FUSION. I've merged superpoint、lightglue and MixVPR into VINS-FUSION for loop closure.If it is helpful to you ,please consider starring this repository.
-### 仅供学习使用 | For study use only
+
+
+### If you use D_VINS for your academic research, please cite our related papers. [pdf](https://www.mdpi.com/2504-446X/8/7/322)
+- Shi, Y.; Li, R.; Shi, Y.; Liang, S. A Robust and Lightweight Loop Closure Detection Approach for Challenging Environments. Drones 2024, 8, 322. https://doi.org/10.3390/drones8070322 
 
 ### 1、Env
 python==3.8.18
