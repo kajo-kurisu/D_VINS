@@ -74,7 +74,7 @@ please refer to [Vins-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusi
 2、Follow the guidence of [lightglue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) to export LG onnx in torch2.1+cuda12.1, and I suggest you to export with my params if you dont want to change any codes.
 Also, you can directly download the superpoint_512.onnx provided in [model](https://github.com/fabio-sim/LightGlue-ONNX/releases) v0.1.3
 
-See [issue3](https://github.com/kajo-kurisu/D_VINS/issues/3) for more imformation
+See [issue3](https://github.com/kajo-kurisu/D_VINS/issues/3) and [issue 11](https://github.com/kajo-kurisu/D_VINS/issues/11) for more imformation
 
 ```
 --dynamic
